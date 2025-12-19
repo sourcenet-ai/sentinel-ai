@@ -1,47 +1,42 @@
 
 import { GoogleGenAI, Type } from '@google/genai';
 
-// Initialize with the API key directly from environment variables
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-export async function analyzeThreatLandscape(advisories) {
-  if (!advisories || advisories.length === 0) return null;
+export async function analyzeThreats(alerts) {
+  if (!alerts || alerts.length === 0) return null;
 
-  const topAdvisories = advisories.slice(0, 8).map(a => `
-    Source: ${a.source}
-    Title: ${a.title}
-    Summary: ${a.summary.substring(0, 300)}...
-  `).join('\n---\n');
+  const promptText = alerts.map(a => `Title: ${a.title}\nSummary: ${a.summary}`).join('\n\n');
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Analyze the following threat advisories and provide a structured briefing for security pros.
+      contents: `Analyze these cybersecurity alerts from Heise.de and provide a high-level briefing.
+      Format the output as JSON with fields: 'overview' (string), 'riskLevel' (string: Low, Medium, High, Critical), 'recommendations' (array of strings).
       
-      Advisories:
-      ${topAdvisories}`,
+      Alerts:
+      ${promptText}`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            summary: { type: Type.STRING },
+            overview: { type: Type.STRING },
             riskLevel: { type: Type.STRING },
-            topRecommendations: {
+            recommendations: {
               type: Type.ARRAY,
               items: { type: Type.STRING }
             }
           },
-          required: ['summary', 'riskLevel', 'topRecommendations']
+          required: ['overview', 'riskLevel', 'recommendations']
         }
       }
     });
 
-    // Use .text property instead of method call per GenAI SDK specifications
     if (!response.text) return null;
     return JSON.parse(response.text);
   } catch (error) {
-    console.error('AI Analysis failed:', error);
+    console.error('AI analysis error:', error);
     return null;
   }
 }
