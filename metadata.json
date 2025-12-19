@@ -1,0 +1,5 @@
+{
+  "name": "ThreatSentinel Global Dashboard",
+  "description": "A sophisticated cybersecurity dashboard monitoring major global threat intelligence feeds (CISA, SANS, BSI, Heise) in real-time, featuring Gemini AI-powered briefings and advanced filtering.",
+  "requestFramePermissions": []
+}
