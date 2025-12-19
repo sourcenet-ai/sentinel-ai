@@ -1,4 +1,10 @@
 
+/**
+ * Shared type definitions for the ThreatSentinel application.
+ * This file is a module that exports interfaces used for threat intelligence data,
+ * AI analysis results, and application state.
+ */
+
 export interface Advisory {
   id: string;
   title: string;
@@ -17,6 +23,12 @@ export interface FetchError {
   message: string;
 }
 
+export interface AIAnalysis {
+  summary: string;
+  riskLevel: 'Low' | 'Medium' | 'High' | 'Critical';
+  topRecommendations: string[];
+}
+
 export interface FilterState {
   keyword: string;
   source: string;
@@ -24,17 +36,11 @@ export interface FilterState {
   endDate: string;
 }
 
-export interface AIAnalysis {
-  summary: string;
-  riskLevel: 'Low' | 'Medium' | 'High' | 'Critical';
-  topRecommendations: string[];
-}
-
 export interface AlertProfile {
   id: string;
   email: string;
-  keywords: string[]; // List of products/keywords
+  keywords: string[];
   source: string;
-  isActive: boolean;
   createdAt: number;
+  isActive: boolean;
 }

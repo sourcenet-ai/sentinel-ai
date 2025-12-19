@@ -2,7 +2,8 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { Advisory, AIAnalysis } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Always use the API key directly from the environment as a named parameter
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function analyzeThreatLandscape(advisories: Advisory[]): Promise<AIAnalysis | null> {
   if (advisories.length === 0) return null;
@@ -39,6 +40,7 @@ export async function analyzeThreatLandscape(advisories: Advisory[]): Promise<AI
       }
     });
 
+    // Access the .text property directly to get the response content
     if (!response.text) throw new Error('Empty AI response');
     return JSON.parse(response.text);
   } catch (error) {

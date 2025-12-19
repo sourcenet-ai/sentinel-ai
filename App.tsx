@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { fetchAllAdvisories } from './services/feedService';
-import { analyzeThreatLandscape } from './services/geminiService';
-import { Advisory, FilterState, AIAnalysis, AlertProfile, FetchError } from './types';
-import AdvisoryTable from './components/AdvisoryTable';
-import AdvisoryModal from './components/AdvisoryModal';
-import ThreatBriefing from './components/ThreatBriefing';
-import SubscriptionModal from './components/SubscriptionModal';
-import Logo from './components/Logo';
+import { fetchAllAdvisories } from './services/feedService.ts';
+import { analyzeThreatLandscape } from './services/geminiService.ts';
+import { Advisory, FilterState, AIAnalysis, AlertProfile, FetchError } from './types.ts';
+import AdvisoryTable from './components/AdvisoryTable.tsx';
+import AdvisoryModal from './components/AdvisoryModal.tsx';
+import ThreatBriefing from './components/ThreatBriefing.tsx';
+import SubscriptionModal from './components/SubscriptionModal.tsx';
+import Logo from './components/Logo.tsx';
 
 type TabType = 'intel' | 'news' | 'breaches' | 'ransomware';
 
@@ -80,19 +80,24 @@ const App: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     setFetchErrors([]);
-    const { advisories: data, errors } = await fetchAllAdvisories();
-    setAdvisories(data);
-    setFetchErrors(errors);
-    setIsLoading(false);
+    try {
+      const { advisories: data, errors } = await fetchAllAdvisories();
+      setAdvisories(data);
+      setFetchErrors(errors);
+      setIsLoading(false);
 
-    checkNotifications(data);
+      checkNotifications(data);
 
-    const intelAdvisories = data.filter(a => a.category === 'intel');
-    if (intelAdvisories.length > 0) {
-      setIsAIAnalysisLoading(true);
-      const insights = await analyzeThreatLandscape(intelAdvisories);
-      setAnalysis(insights);
-      setIsAIAnalysisLoading(false);
+      const intelAdvisories = data.filter(a => a.category === 'intel');
+      if (intelAdvisories.length > 0) {
+        setIsAIAnalysisLoading(true);
+        const insights = await analyzeThreatLandscape(intelAdvisories);
+        setAnalysis(insights);
+        setIsAIAnalysisLoading(false);
+      }
+    } catch (e) {
+      console.error("Fetch failed", e);
+      setIsLoading(false);
     }
   };
 
@@ -177,7 +182,6 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* FEED ERRORS DEBUG BANNER */}
       {fetchErrors.length > 0 && (
         <div className="max-w-7xl mx-auto px-6 mb-6">
           <div className="bg-red-950/40 border border-red-500/30 rounded-xl p-4 shadow-lg shadow-red-900/10">
@@ -193,40 +197,21 @@ const App: React.FC = () => {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-[9px] text-slate-500 italic">
-              * Inspect individual error payloads above. Network failures typically indicate CORS restrictions or invalid credentials.
-            </p>
           </div>
         </div>
       )}
 
-      {/* Tab Navigation */}
       <nav className="max-w-7xl mx-auto px-6 mb-8">
         <div className="flex border-b border-slate-800 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => { setActiveTab('intel'); setFilters(f => ({ ...f, source: 'All' })); }}
-            className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-all whitespace-nowrap border-b-2 ${activeTab === 'intel' ? 'border-orange-500 text-orange-500 bg-orange-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
-          >
-            Threat Intel
-          </button>
-          <button
-            onClick={() => { setActiveTab('news'); setFilters(f => ({ ...f, source: 'All' })); }}
-            className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-all whitespace-nowrap border-b-2 ${activeTab === 'news' ? 'border-orange-500 text-orange-500 bg-orange-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
-          >
-            Briefings
-          </button>
-          <button
-            onClick={() => { setActiveTab('breaches'); setFilters(f => ({ ...f, source: 'All' })); }}
-            className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-all whitespace-nowrap border-b-2 ${activeTab === 'breaches' ? 'border-orange-500 text-orange-500 bg-orange-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
-          >
-            Data Breaches
-          </button>
-          <button
-            onClick={() => { setActiveTab('ransomware'); setFilters(f => ({ ...f, source: 'All' })); }}
-            className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-all whitespace-nowrap border-b-2 ${activeTab === 'ransomware' ? 'border-orange-500 text-orange-500 bg-orange-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
-          >
-            Ransomware
-          </button>
+          {(['intel', 'news', 'breaches', 'ransomware'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tab); setFilters(f => ({ ...f, source: 'All' })); }}
+              className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-all whitespace-nowrap border-b-2 ${activeTab === tab ? 'border-orange-500 text-orange-500 bg-orange-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+            >
+              {tab === 'intel' ? 'Threat Intel' : tab === 'news' ? 'Briefings' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
       </nav>
 
@@ -236,10 +221,9 @@ const App: React.FC = () => {
         )}
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-8 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 blur-[80px] -mr-16 -mt-16 pointer-events-none"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Search (OR: comma sep.)</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Search</label>
               <div className="relative">
                 <input 
                   type="text" 
@@ -253,7 +237,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{activeTab === 'ransomware' ? 'Ransom Group' : 'Source Provider'}</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Source Provider</label>
               <select 
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 value={filters.source}
@@ -294,20 +278,9 @@ const App: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                {activeTab === 'intel' && 'Intelligence Reports'}
-                {activeTab === 'news' && 'Intelligence Briefings'}
-                {activeTab === 'breaches' && 'Confirmed Data Incidents'}
-                {activeTab === 'ransomware' && 'Active Ransomware Victims'}
+                Intelligence Reports
                 <span className="ml-2 text-slate-600 font-normal">({filteredAdvisories.length} results)</span>
               </p>
-              {filteredAdvisories.length < advisories.filter(a => a.category === activeTab).length && (
-                 <button 
-                  onClick={() => setFilters({ keyword: '', source: 'All', startDate: '', endDate: '' })}
-                  className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-widest transition-colors"
-                 >
-                  Reset Tab Filters
-                 </button>
-              )}
             </div>
             <AdvisoryTable 
               advisories={filteredAdvisories} 
@@ -334,7 +307,7 @@ const App: React.FC = () => {
 
       <footer className="mt-20 border-t border-slate-900 py-8 text-center">
         <p className="text-xs text-slate-600 font-medium tracking-wide">
-          Intelligence synchronized from global providers • Dashboard by <span className="text-orange-500/80">ThreatSentinel AI</span> • {new Date().getFullYear()}
+          Intelligence Dashboard • {new Date().getFullYear()}
         </p>
       </footer>
     </div>
